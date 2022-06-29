@@ -1,0 +1,68 @@
+GET _cat/indices?h=h,s,i,id,p,r,dc,dd,ss,creation.date.string&v&s=index
+GET _cat/allocation?v
+GET _cat/shards?v&s=index
+GET /_cat/shards?v=true&format=JSON&bytes=mb
+GET _cat/health?v
+GET _cat/templates?v
+GET _index_template/test-on-aws
+GET _cat/aliases?v
+GET _cluster/settings
+
+PUT /_plugins/_replication/test-acc-write-000001/_start?pretty
+{
+   "leader_alias": "connection-to-on-prem",
+   "leader_index": "stp-int-000001",
+   "use_roles":{
+      "leader_cluster_role": "all_access",
+      "follower_cluster_role": "all_access"
+   }
+}
+
+GET /_plugins/_replication/test-acc-write-000001/_status?pretty
+POST /_plugins/_replication/test-acc-write-000001/_pause?pretty
+{}
+POST /_plugins/_replication/test-acc-write-000001/_resume?pretty
+{}
+POST /_plugins/_replication/test-acc-write-000001/_stop?pretty
+{}
+
+
+POST _reindex
+{
+  "source": {
+    "index":[
+      "stp-int-000005",
+      "stp-int-000006"
+  ]},
+  "dest": {
+    "index": "test-acc-000001"
+  }
+}
+
+GET test-acc-write-000001/_count
+
+
+POST /_plugins/_replication/_autofollow?pretty
+{
+"leader_alias" : "connection-to-on-prem",
+"name": "on-prem-to-aws",
+"pattern": "stp-int*",
+
+"use_roles":{
+"leader_cluster_role": "all_access",
+"follower_cluster_role": "all_access"
+}}
+
+POST /_plugins/_replication/_autofollow?pretty
+{}
+
+POST /_plugins/_replication/_autofollow/_pause 
+{}
+
+GET /_plugins/_replication/autofollow_stats
+
+DELETE /_plugins/_replication/_autofollow?pretty
+{
+"leader_alias" : "connection-to-on-prem",
+"name": "on-prem-to-aws"
+}
